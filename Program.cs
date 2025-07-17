@@ -7,6 +7,7 @@ builder.Services.AddSingleton<WorkflowStore>();
 
 var app = builder.Build();
 
+//This API Creates a workflow if it does not already exist
 app.MapPost("/workflows", (WorkflowDefinition definition, WorkflowStore store) =>
 {
     if (definition.States.Count(s => s.IsInitial) != 1)
@@ -20,12 +21,14 @@ app.MapPost("/workflows", (WorkflowDefinition definition, WorkflowStore store) =
     return Results.Conflict($"ERROR!!!!!! The given workflow with ID '{definition.Id}' already exists and hence cannot me made again.");
 });
 
+//This API retrieves a particular workflow given an id
 app.MapGet("/workflows/{id}", (string id, WorkflowStore store) =>
 {
-    var definition= store.GetDefinition(id);
-    return definition is not null? Results.Ok(definition) : Results.NotFound();
+    var definition = store.GetDefinition(id);
+    return definition is not null ? Results.Ok(definition) : Results.NotFound();
 });
 
+//This API creates an Instance given a definitionId i.e. its workflow is given
 app.MapPost("/workflows/{definitionId}/instances", (string definitionId, WorkflowStore store) =>
 {
     var definition = store.GetDefinition(definitionId);
@@ -44,12 +47,14 @@ app.MapPost("/workflows/{definitionId}/instances", (string definitionId, Workflo
     return Results.Created($"/instances/{instance.Id}", instance);
 });
 
+//This API retrieves an instance given its instanceID
 app.MapGet("/instances/{instanceId}", (Guid instanceId, WorkflowStore store) =>
 {
     var instance = store.GetInstance(instanceId);
     return instance is not null ? Results.Ok(instance) : Results.NotFound();
 });
 
+//This API is the main API which executes a particular action if it is avialable
 app.MapPost("/instances/{instanceId}/execute", (Guid instanceId, ExecuteActionRequest request, WorkflowStore store) =>
 {
     var instance =store.GetInstance(instanceId);
