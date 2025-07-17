@@ -2,15 +2,15 @@ namespace back.Models
 {
     public record State(
         string Id,
-        bool IsInitial = false,
-        bool IsFinal = false,
-        bool Enabled = true
+        bool IsInitial= false,
+        bool IsFinal= false,
+        bool Enabled= true
     );
     public record Action(
         string Id,
         List<string> FromStates,
         string ToState,
-        bool Enabled = true
+        bool Enabled= true
     );
     public record WorkflowDefinition(
         string Id,

@@ -1,12 +1,12 @@
 using back.Models;
 using System.Collections.Concurrent;
 
-namespace back.Services
+namespace back.Storage
 {
     public class WorkflowStore
     {
-        private readonly ConcurrentDictionary<string, WorkflowDefinition> _definitions = new();
-        private readonly ConcurrentDictionary<Guid, WorkflowInstance> _instances = new();
+        private readonly ConcurrentDictionary<string, WorkflowDefinition> _definitions= new();
+        private readonly ConcurrentDictionary<Guid, WorkflowInstance> _instances= new();
         public bool TryAddDefinition(WorkflowDefinition definition)
         {
             return _definitions.TryAdd(definition.Id, definition);

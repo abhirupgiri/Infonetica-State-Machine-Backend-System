@@ -1,5 +1,5 @@
 using back.Models;
-using back.Services;
+using back.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,13 +11,13 @@ app.MapPost("/workflows", (WorkflowDefinition definition, WorkflowStore store) =
 {
     if (definition.States.Count(s => s.IsInitial) != 1)
     {
-        return Results.BadRequest("A workflow definition must have exactly one initial state.");
+        return Results.BadRequest("ERROR!!!!!! A workflow definition must have exactly one initial state.");
     }
     if (store.TryAddDefinition(definition))
     {
         return Results.Created($"/workflows/{definition.Id}", definition);
     }
-    return Results.Conflict($"A workflow with ID '{definition.Id}' already exists.");
+    return Results.Conflict($"ERROR!!!!!! The given workflow with ID '{definition.Id}' already exists and hence cannot me made again.");
 });
 
 app.MapGet("/workflows/{id}", (string id, WorkflowStore store) =>
@@ -31,10 +31,10 @@ app.MapPost("/workflows/{definitionId}/instances", (string definitionId, Workflo
     var definition = store.GetDefinition(definitionId);
     if (definition is null)
     {
-        return Results.NotFound($"Workflow definition with ID '{definitionId}' not found.");
+        return Results.NotFound($"ERROR!!!!! Workflow definition with given ID '{definitionId}' not found. Please create the workflow first!");
     }
-    var initialState = definition.States.First(s => s.IsInitial);
-    var instance = new WorkflowInstance(
+    var initialState =definition.States.First(s =>s.IsInitial);
+    var instance =new WorkflowInstance(
         Id: Guid.NewGuid(),
         DefinitionId: definitionId,
         CurrentStateId: initialState.Id,
@@ -52,38 +52,38 @@ app.MapGet("/instances/{instanceId}", (Guid instanceId, WorkflowStore store) =>
 
 app.MapPost("/instances/{instanceId}/execute", (Guid instanceId, ExecuteActionRequest request, WorkflowStore store) =>
 {
-    var instance = store.GetInstance(instanceId);
-    if (instance is null)
+    var instance =store.GetInstance(instanceId);
+    if(instance is null)
     {
-        return Results.NotFound($"Instance with ID '{instanceId}' not found.");
+        return Results.NotFound($"ERROR!!!!! Instance with ID '{instanceId}' not found. Please create such an instance first.");
     }
-    var definition = store.GetDefinition(instance.DefinitionId);
-    var currentState = definition!.States.First(s => s.Id == instance.CurrentStateId);
+    var definition= store.GetDefinition(instance.DefinitionId);
+    var currentState= definition!.States.First(s => s.Id == instance.CurrentStateId);
     if (currentState.IsFinal)
     {
-        return Results.BadRequest("Cannot execute action on an instance in a final state.");
+        return Results.BadRequest("ERROR!!!!! Cannot execute action on an instance in a final state. There can be no more transitions!");
     }
 
-    var actionToExecute = definition.Actions.FirstOrDefault(a => a.Id == request.ActionId);
+    var actionToExecute= definition.Actions.FirstOrDefault(a => a.Id == request.ActionId);
     if (actionToExecute is null)
     {
-        return Results.BadRequest($"Action '{request.ActionId}' not found in workflow definition.");
+        return Results.BadRequest($"ERROR!!!!! Action '{request.ActionId}' not found in workflow definition. Create such an action first.");
     }
 
     if (!actionToExecute.Enabled)
     {
-        return Results.BadRequest($"Action '{request.ActionId}' is disabled.");
+        return Results.BadRequest($"ERROR!!!!! Action '{request.ActionId}' is disabled.");
     }
 
     if (!actionToExecute.FromStates.Contains(currentState.Id))
     {
-        return Results.BadRequest($"Action '{request.ActionId}' cannot be executed from the current state '{currentState.Id}'.");
+        return Results.BadRequest($"ERROR!!!!! Action '{request.ActionId}' cannot be executed from the current state '{currentState.Id}'.");
     }
 
-    var updatedInstance = instance with
+    var updatedInstance=instance with
     {
-        CurrentStateId = actionToExecute.ToState,
-        History = instance.History.Append(new HistoryEntry(request.ActionId, DateTime.UtcNow)).ToList()
+        CurrentStateId=actionToExecute.ToState,
+        History =instance.History.Append(new HistoryEntry(request.ActionId, DateTime.UtcNow)).ToList()
     };
     store.SaveInstance(updatedInstance);
     return Results.Ok(updatedInstance);
